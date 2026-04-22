@@ -1,0 +1,5 @@
+node_modules
+optimized
+dist
+src/
+.DS_Store
