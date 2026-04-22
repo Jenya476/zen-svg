@@ -1,202 +1,503 @@
-import { useState, useMemo } from 'react';
-import { Search, Copy, Check, Download, Zap, Github, Terminal, Sparkles } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { 
+  Upload, 
+  Trash2, 
+  Download, 
+  Copy, 
+  Check, 
+  Settings as SettingsIcon,
+  Search,
+  Grid,
+  Code,
+  FileCode,
+  AlertCircle,
+  Menu,
+  X,
+  Zap,
+  RefreshCw,
+  LayoutGrid,
+  Info
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { optimize } from 'svgo';
+import { cn } from './lib/utils';
+
+// --- Types ---
+
+interface SvgIcon {
+  id: string;
+  name: string;
+  originalName: string;
+  content: string;
+  optimizedContent: string;
+  viewBox: string;
+  size: number;
 }
 
-const ICONS = [
-  "arrow", "audit", "balance", "check", "discord", "exit", "fee", 
-  "github", "humberger-svgrepo-com", "search", "switch", "tg", 
-  "time", "x", "youtube"
-];
+interface SpriteOptions {
+  prefix: string;
+  useCurrentColor: boolean;
+  removeDimensions: boolean;
+  cleanMetadata: boolean;
+}
 
-export default function App() {
-  const [search, setSearch] = useState('');
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+// --- Components ---
 
-  const filteredIcons = useMemo(() => 
-    ICONS.filter(name => name.toLowerCase().includes(search.toLowerCase())),
-    [search]
-  );
+const Header = () => (
+  <header className="flex flex-col md:flex-row justify-between items-end p-8 border-b-2 border-black bg-white">
+    <div className="flex flex-col">
+      <span className="text-[10px] font-black tracking-[0.3em] uppercase opacity-50 mb-2">Project / Zen-SVG</span>
+      <h1 className="text-7xl md:text-[120px] leading-[0.8] font-black tracking-tighter uppercase">
+        Zen<br/><span className="text-brand-orange">SVG</span>
+      </h1>
+    </div>
+    <div className="flex flex-col items-end gap-6 pb-2">
+      <div className="mt-6 md:mt-0 text-right">
+        <p className="text-sm font-black uppercase tracking-widest">Version 2.4.0</p>
+        <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest">Web Sprite Engine</p>
+      </div>
+      <a 
+        href="https://github.com/Jenya476/zen-svg" 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="bg-black text-white px-8 py-4 font-black uppercase text-xs tracking-widest hover:bg-brand-orange transition-colors"
+      >
+        Github Repo
+      </a>
+    </div>
+  </header>
+);
 
-  const copyToClipboard = (name: string) => {
-    const text = `<svg class="icon"><use href="sprite.svg#${name}"></use></svg>`;
-    navigator.clipboard.writeText(text);
-    setCopiedId(name);
-    setTimeout(() => setCopiedId(null), 2000);
+const Dropzone = ({ onFilesAdded }: { onFilesAdded: (files: FileList) => void }) => {
+  const [isDragActive, setIsDragActive] = useState(false);
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setIsDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setIsDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      onFilesAdded(e.dataTransfer.files);
+    }
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      onFilesAdded(e.target.files);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-200 selection:bg-sky-500/30">
-      {/* Background decoration */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-sky-500/10 blur-[120px] rounded-full" />
-        <div className="absolute top-[20%] -right-[10%] w-[30%] h-[30%] bg-indigo-500/10 blur-[120px] rounded-full" />
-      </div>
-
-      <div className="relative max-w-7xl mx-auto px-6 py-16 lg:py-24">
-        {/* Header */}
-        <header className="flex flex-col items-center text-center mb-16 lg:mb-24">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-sm font-medium mb-6"
-          >
-            <Sparkles size={14} />
-            <span>Premium SVG Optimization</span>
-          </motion.div>
-          
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-5xl lg:text-7xl font-bold tracking-tight mb-6 bg-gradient-to-r from-sky-400 via-indigo-400 to-sky-400 bg-clip-text text-transparent"
-          >
-            ZenSVG Gallery
-          </motion.h1>
-          
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-slate-400 text-lg max-w-2xl"
-          >
-            A high-performance icon system optimized for modern web applications.
-            Clean, consistent, and ready to use.
-          </motion.p>
-
-          {/* Stats/Quick Info */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="flex gap-8 mt-10 text-sm font-medium text-slate-500"
-          >
-            <div className="flex items-center gap-2">
-              <Zap size={16} className="text-sky-500" />
-              <span>{ICONS.length} Icons</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Terminal size={16} className="text-indigo-500" />
-              <span>Optimized with SVGO</span>
-            </div>
-          </motion.div>
-        </header>
-
-        {/* Controls */}
-        <div className="sticky top-6 z-40 mb-12">
-          <div className="max-w-2xl mx-auto">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-sky-500/20 to-indigo-500/20 rounded-2xl blur-xl transition-all group-focus-within:blur-2xl opacity-0 group-focus-within:opacity-100" />
-              <div className="relative flex items-center bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-2xl px-5 transition-all group-focus-within:border-sky-500/50">
-                <Search className="text-slate-500 mr-3" size={20} />
-                <input
-                  type="text"
-                  placeholder="Search icons..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-transparent py-4 text-slate-200 placeholder:text-slate-600 focus:outline-none text-lg"
-                />
-                {search && (
-                  <button 
-                    onClick={() => setSearch('')}
-                    className="p-1 hover:bg-slate-800 rounded-md text-slate-500 transition-colors"
-                  >
-                    <Check size={16} />
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
+    <div
+      onDragEnter={handleDrag}
+      onDragLeave={handleDrag}
+      onDragOver={handleDrag}
+      onDrop={handleDrop}
+      className={cn(
+        "relative border-4 border-dashed border-black transition-all duration-300 p-12 text-center group bg-white",
+        isDragActive && "bg-brand-orange/5"
+      )}
+    >
+      <input
+        type="file"
+        multiple
+        accept=".svg"
+        onChange={handleFileInput}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+      />
+      <div className="flex flex-col items-center gap-4">
+        <div className={cn(
+          "w-20 h-20 border-4 border-black flex items-center justify-center transition-transform duration-500",
+          isDragActive ? "rotate-180 bg-brand-orange text-white" : "bg-white text-black group-hover:rotate-12"
+        )}>
+          <Upload size={32} strokeWidth={3} />
         </div>
-
-        {/* Grid */}
-        <motion.div 
-          layout
-          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6"
-        >
-          <AnimatePresence mode="popLayout">
-            {filteredIcons.map((name) => (
-              <motion.div
-                key={name}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                whileHover={{ y: -5 }}
-                className="group relative"
-              >
-                <div 
-                  onClick={() => copyToClipboard(name)}
-                  className="h-full flex flex-col items-center bg-slate-900/50 border border-slate-800/50 rounded-2xl p-6 transition-all hover:bg-slate-800 hover:border-sky-500/30 cursor-pointer"
-                >
-                  <div className="w-12 h-12 mb-4 text-slate-400 group-hover:text-sky-400 transition-colors flex items-center justify-center">
-                    <svg className="w-full h-full fill-current">
-                      <use href={`sprite.svg#${name}`} />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium text-slate-400 group-hover:text-slate-200 text-center line-clamp-1 w-full px-2">
-                    {name}
-                  </span>
-
-                  {/* Copy Hint */}
-                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {copiedId === name ? (
-                      <Check size={14} className="text-emerald-400" />
-                    ) : (
-                      <Copy size={14} className="text-slate-500" />
-                    )}
-                  </div>
-                </div>
-
-                <AnimatePresence>
-                  {copiedId === name && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute -bottom-10 left-1/2 -translate-x-1/2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-400 text-[10px] font-bold whitespace-nowrap z-10"
-                    >
-                      COPIED TO CLIPBOARD
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
-
-        {filteredIcons.length === 0 && (
-          <div className="py-24 text-center">
-            <p className="text-slate-500 text-lg">No icons found matching "{search}"</p>
-          </div>
-        )}
-
-        {/* Footer */}
-        <footer className="mt-32 pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-4 text-slate-500 text-sm">
-            <span>© 2026 ZenSVG</span>
-            <span className="w-1 h-1 bg-slate-800 rounded-full" />
-            <a href="#" className="hover:text-sky-400 transition-colors flex items-center gap-1">
-              <Github size={14} />
-              GitHub
-            </a>
-          </div>
-          <div className="flex gap-4">
-            <button className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors flex items-center gap-2">
-              <Download size={16} />
-              Download Sprite
-            </button>
-            <button className="px-4 py-2 bg-sky-500 text-white rounded-lg text-sm font-bold hover:bg-sky-400 transition-colors shadow-lg shadow-sky-500/20">
-              Integrate Now
-            </button>
-          </div>
-        </footer>
+        <div>
+          <h2 className="text-3xl md:text-4xl font-black uppercase mb-2">Drop SVGs Here</h2>
+          <p className="text-[10px] font-black opacity-50 uppercase tracking-[0.2em]">Or click to select files from local storage</p>
+        </div>
+        <div className="flex gap-4 text-[10px] font-black uppercase tracking-widest mt-4">
+          <span className="flex items-center gap-1"><Check size={10} strokeWidth={4} /> Optimized</span>
+          <span className="flex items-center gap-1"><Check size={10} strokeWidth={4} /> Sprite</span>
+          <span className="flex items-center gap-1"><Check size={10} strokeWidth={4} /> Engine</span>
+        </div>
       </div>
     </div>
   );
+};
+
+export default function App() {
+  const [icons, setIcons] = useState<SvgIcon[]>([]);
+  const [options, setOptions] = useState<SpriteOptions>({
+    prefix: 'icon-',
+    useCurrentColor: true,
+    removeDimensions: true,
+    cleanMetadata: true,
+  });
+  const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<'preview' | 'code'>('preview');
+  const [copied, setCopied] = useState(false);
+  const [spriteCode, setSpriteCode] = useState('');
+
+  const optimizeIcon = useCallback(async (content: string, name: string): Promise<Omit<SvgIcon, 'id' | 'originalName'>> => {
+    try {
+      const result = await optimize(content, {
+        multipass: true,
+        plugins: [
+          'preset-default',
+          ...(options.removeDimensions ? ['removeDimensions'] as any[] : []),
+          ...(options.useCurrentColor ? [{
+            name: 'convertColors',
+            params: { currentColor: true }
+          }] as any[] : []),
+          {
+            name: 'removeAttrs',
+            params: { attrs: '(stroke|fill)' }
+          } as any
+        ]
+      });
+
+      // Extract viewBox
+      const viewBoxMatch = result.data.match(/viewBox="([^"]+)"/);
+      const viewBox = viewBoxMatch ? viewBoxMatch[1] : '0 0 24 24';
+
+      return {
+        name: name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        content,
+        optimizedContent: result.data,
+        viewBox,
+        size: content.length,
+      };
+    } catch (err) {
+      console.error('Optimization error:', err);
+      return {
+        name,
+        content,
+        optimizedContent: content,
+        viewBox: '0 0 24 24',
+        size: content.length,
+      };
+    }
+  }, [options]);
+
+  const handleFilesAdded = async (files: FileList) => {
+    const newIcons: SvgIcon[] = [];
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (file.type !== 'image/svg+xml' && !file.name.endsWith('.svg')) continue;
+
+      const content = await file.text();
+
+      // Check if it's a sprite being "unpacked"
+      if (content.includes('<symbol') || content.includes('<svg')) {
+        // Basic unpacking logic
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(content, 'image/svg+xml');
+        const symbols = doc.querySelectorAll('symbol');
+        
+        if (symbols.length > 0) {
+          for (let s = 0; s < symbols.length; s++) {
+            const sym = symbols[s];
+            const symId = sym.getAttribute('id') || `unpacked-${i}-${s}`;
+            const symViewBox = sym.getAttribute('viewBox') || '0 0 24 24';
+            const symContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${symViewBox}">${sym.innerHTML}</svg>`;
+            
+            const optimized = await optimizeIcon(symContent, symId);
+            newIcons.push({
+              id: Math.random().toString(36).substring(7),
+              originalName: symId,
+              ...optimized
+            });
+          }
+          continue;
+        }
+      }
+
+      const name = file.name.replace(/\.svg$/, '');
+      const optimized = await optimizeIcon(content, name);
+      
+      newIcons.push({
+        id: Math.random().toString(36).substring(7),
+        originalName: file.name,
+        ...optimized
+      });
+    }
+
+    setIcons(prev => [...prev, ...newIcons]);
+  };
+
+  const removeIcon = (id: string) => {
+    setIcons(prev => prev.filter(icon => icon.id !== id));
+  };
+
+  const clearAll = () => {
+    setIcons([]);
+  };
+
+  // Build sprite string
+  useEffect(() => {
+    if (icons.length === 0) {
+      setSpriteCode('');
+      return;
+    }
+
+    let symbols = '';
+    icons.forEach(icon => {
+      const symbolContent = icon.optimizedContent
+        .replace(/<svg[^>]*>/, '')
+        .replace(/<\/svg>/, '');
+      
+      symbols += `  <symbol id="${options.prefix}${icon.name}" viewBox="${icon.viewBox}">\n    ${symbolContent}\n  </symbol>\n`;
+    });
+
+    const sprite = `<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">\n${symbols}</svg>`;
+    setSpriteCode(sprite);
+  }, [icons, options.prefix]);
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(spriteCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const downloadSprite = () => {
+    const blob = new Blob([spriteCode], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sprite.svg';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const filteredIcons = icons.filter(icon => 
+    icon.name.includes(search.toLowerCase()) || 
+    icon.originalName.includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="min-h-screen bg-brutal-bg text-brutal-black font-sans selection:bg-brand-orange selection:text-white border-[12px] border-black flex flex-col">
+      <Header />
+      
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12">
+        <div className="lg:col-span-8 border-r-2 border-black flex flex-col min-h-[500px]">
+          
+          <div className="p-8 md:p-12 border-b-2 border-black flex flex-col gap-8">
+            <Dropzone onFilesAdded={handleFilesAdded} />
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-white p-6 border-2 border-black">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase mb-1 opacity-50 tracking-widest">Icon Count</span>
+                <span className="text-2xl font-black">{icons.length} Files</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase mb-1 opacity-50 tracking-widest">Weight</span>
+                <span className="text-2xl font-black">{(icons.reduce((acc, i) => acc + i.size, 0) / 1024).toFixed(1)} KB</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase mb-1 opacity-50 tracking-widest">Engine</span>
+                <span className="text-2xl font-black text-brand-orange">ACTIVE</span>
+              </div>
+              <div className="flex flex-col items-end justify-center">
+                <button 
+                  onClick={clearAll}
+                  disabled={icons.length === 0}
+                  className="w-full h-full bg-black text-white font-black uppercase text-[10px] tracking-widest hover:bg-brand-orange transition-colors disabled:opacity-20"
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 bg-white CustomScroll overflow-auto">
+            {icons.length > 0 ? (
+              <div className="p-8">
+                <div className="flex items-center justify-between mb-8 pb-4 border-b border-black/10">
+                   <h2 className="text-xs font-black uppercase tracking-[0.3em]">Project Manifest</h2>
+                   <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-black/50" size={14} strokeWidth={3} />
+                      <input 
+                        type="text" 
+                        placeholder="Search..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-9 pr-4 py-2 border-2 border-black font-bold text-xs uppercase tracking-widest focus:outline-none focus:bg-brand-orange focus:text-white transition-colors w-40"
+                      />
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-0 border-t border-l border-black/10">
+                  <AnimatePresence>
+                    {filteredIcons.map((icon) => (
+                      <motion.div 
+                        key={icon.id}
+                        layout
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="group relative aspect-square border-r border-b border-black/10 flex flex-col items-center justify-center p-4 hover:bg-black hover:text-white transition-colors cursor-crosshair"
+                      >
+                        <div className="w-12 h-12 flex items-center justify-center">
+                          <div 
+                            className="w-full h-full fill-current"
+                            dangerouslySetInnerHTML={{ __html: icon.optimizedContent }}
+                          />
+                        </div>
+                        <p className="mt-4 text-[10px] font-black uppercase tracking-tight text-center truncate w-full px-2">
+                          {icon.name}
+                        </p>
+                        
+                        <button 
+                          onClick={() => removeIcon(icon.id)}
+                          className="absolute top-2 right-2 p-1 bg-brand-orange text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X size={10} strokeWidth={4} />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              </div>
+            ) : (
+                <div className="h-full flex flex-col items-center justify-center text-black/20 p-20">
+                   <Zap size={80} strokeWidth={1} />
+                   <p className="mt-4 text-xs font-black uppercase tracking-[0.5em]">No Icons Processed</p>
+                </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Settings & Output */}
+        <div className="lg:col-span-4 bg-white flex flex-col border-l-2 border-black lg:border-l-0">
+          
+          <div className="p-8 border-b-2 border-black flex-1 overflow-auto CustomScroll">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] mb-8 border-b border-black pb-2">Sprite Configuration</h3>
+            
+            <div className="space-y-8">
+              <div className="flex flex-col">
+                <label className="text-[10px] font-black uppercase mb-2 tracking-widest opacity-50">ID Prefix</label>
+                <input 
+                  type="text" 
+                  value={options.prefix}
+                  onChange={(e) => setOptions(prev => ({ ...prev, prefix: e.target.value }))}
+                  className="border-2 border-black p-3 font-bold text-sm focus:outline-none focus:bg-brand-orange focus:text-white transition-colors"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <label className="flex items-center justify-between p-4 border-2 border-black cursor-pointer bg-brutal-bg hover:bg-black hover:text-white transition-colors">
+                  <span className="text-[10px] font-black uppercase tracking-widest">CurrentColor</span>
+                  <div className={cn(
+                    "w-3 h-3 border-2 border-black",
+                    options.useCurrentColor ? "bg-brand-orange border-brand-orange" : "bg-white"
+                  )} />
+                  <input 
+                    type="checkbox" 
+                    className="hidden" 
+                    checked={options.useCurrentColor}
+                    onChange={() => setOptions(prev => ({ ...prev, useCurrentColor: !prev.useCurrentColor }))}
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-4 border-2 border-black cursor-pointer bg-brutal-bg hover:bg-black hover:text-white transition-colors">
+                  <span className="text-[10px] font-black uppercase tracking-widest">Clean Data</span>
+                  <div className={cn(
+                    "w-3 h-3 border-2 border-black",
+                    options.removeDimensions ? "bg-brand-orange border-brand-orange" : "bg-white"
+                  )} />
+                  <input 
+                    type="checkbox" 
+                    className="hidden" 
+                    checked={options.removeDimensions}
+                    onChange={() => setOptions(prev => ({ ...prev, removeDimensions: !prev.removeDimensions }))}
+                  />
+                </label>
+              </div>
+
+              {spriteCode && (
+                <div className="pt-8 border-t border-black/10 mt-8 space-y-6">
+                   <div className="flex gap-1">
+                      <button 
+                        onClick={() => setActiveTab('preview')}
+                        className={cn(
+                          "px-4 py-2 text-[10px] font-black uppercase tracking-widest border-2 border-black transition-colors",
+                          activeTab === 'preview' ? "bg-black text-white" : "bg-white text-black"
+                        )}
+                      >Usage</button>
+                      <button 
+                        onClick={() => setActiveTab('code')}
+                        className={cn(
+                          "px-4 py-2 text-[10px] font-black uppercase tracking-widest border-2 border-black transition-colors",
+                          activeTab === 'code' ? "bg-black text-white" : "bg-white text-black"
+                        )}
+                      >Source</button>
+                   </div>
+
+                   {activeTab === 'preview' ? (
+                     <div className="bg-black text-white p-4 font-mono text-[10px] relative group overflow-hidden border-2 border-black">
+                        <code>
+                          &lt;svg class="icon"&gt;<br />
+                          &nbsp;&nbsp;&lt;use href="...#{options.prefix}{icons[0]?.name || 'name'}"&gt;&lt;/use&gt;<br />
+                          &lt;/svg&gt;
+                        </code>
+                        <button 
+                          onClick={() => {
+                            const code = `<svg class="icon">\n  <use href="#${options.prefix}${icons[0]?.name || 'name'}"></use>\n</svg>`;
+                            navigator.clipboard.writeText(code);
+                          }}
+                          className="absolute top-2 right-2 p-1.5 bg-brand-orange text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Copy size={12} strokeWidth={3} />
+                        </button>
+                     </div>
+                   ) : (
+                     <div className="bg-black text-white p-4 font-mono text-[10px] h-32 overflow-auto CustomScroll border-2 border-black">
+                        {spriteCode}
+                     </div>
+                   )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <button 
+            disabled={icons.length === 0}
+            onClick={downloadSprite}
+            className="bg-brand-orange h-32 text-white p-8 flex items-center justify-between group disabled:bg-black/10 disabled:text-black/30 transition-colors"
+          >
+            <span className="text-3xl md:text-4xl font-black uppercase tracking-tighter">Generate</span>
+            <span className="text-4xl group-hover:translate-x-2 transition-transform duration-500">→</span>
+          </button>
+        </div>
+      </main>
+
+      <footer className="bg-black text-white p-4 flex justify-between items-center text-[10px] font-black uppercase tracking-[0.2em]">
+        <div className="flex gap-4">
+          <Zap size={14} strokeWidth={3} className="text-brand-orange" />
+          <span>System: Active</span>
+        </div>
+        <div className="flex gap-8">
+          <span className="opacity-50 hidden md:block">Zen-SVG v2.4.0 Engine</span>
+          {icons.length > 0 && <button onClick={copyToClipboard} className="text-brand-orange hover:underline decoration-2 underline-offset-4">Copy Sprite {copied && "[Done]"}</button>}
+        </div>
+      </footer>
+    </div>
+  );
 }
+
