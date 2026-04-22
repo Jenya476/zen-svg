@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "clean": "rimraf optimized dist",
-    "optimize": "svgo -f src -o optimized --config svgo.config.mjs",
+    "optimize": "node scripts/optimize.mjs",
     "sprite": "svg-sprite --symbol --symbol-dest dist --symbol-sprite sprite.svg optimized/*.svg && node generate-demo.mjs",
     "build": "npm run clean && npm run optimize && npm run sprite",
     "watch": "chokidar \"src/**/*.svg\" -c \"npm run build\""

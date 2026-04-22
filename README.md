@@ -8,6 +8,7 @@ This project streamlines the process of handling "dirty" SVG files exported from
 - Removes unnecessary metadata and redundant code.
 - Standardizes icons (e.g., converting hardcoded colors to `currentColor`).
 - Combines all icons into a single SVG sprite for efficient usage.
+- **Smart Incremental Updates**: Ability to "unpack" existing sprites from the `src` folder and merge them with new icons.
 - **Generates a Premium Icon Gallery** with click-to-copy functionality for developers.
 
 ## 🛠 Tech Stack
@@ -39,6 +40,8 @@ This project streamlines the process of handling "dirty" SVG files exported from
 
 ### 1. Prepare Icons
 Drop your `.svg` files into the `src/` folder.
+
+**💡 Pro Tip (Incremental Updates):** If you have an existing `sprite.svg` and want to add just one icon, you don't need the original source files. Just drop the `sprite.svg` and your new icon into the `src/` folder. The system will "explode" the sprite, optimize everything, and merge it all into a new build.
 
 ### 2. Build and Optimize
 Run the full build process (clean, optimization + sprite generation):

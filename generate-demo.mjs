@@ -3,6 +3,7 @@ import path from 'path';
 
 const DIST_DIR = './dist';
 const SRC_DIR = './src';
+const OPTIMIZED_DIR = './optimized';
 const SPRITE_PATH = path.join(DIST_DIR, 'sprite.svg');
 const OUTPUT_PATH = path.join(DIST_DIR, 'index.html');
 
@@ -11,8 +12,8 @@ async function generateDemo() {
     // Read the sprite content to inline it
     const spriteContent = fs.readFileSync(SPRITE_PATH, 'utf8');
     
-    // Get all icon names from the src directory
-    const icons = fs.readdirSync(SRC_DIR)
+    // Get all icon names from the optimized directory
+    const icons = fs.readdirSync(OPTIMIZED_DIR)
       .filter(file => file.endsWith('.svg'))
       .map(file => path.parse(file).name);
 
