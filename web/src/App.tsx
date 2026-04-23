@@ -3,29 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { 
-  Upload, 
-  Trash2, 
-  Download, 
-  Copy, 
-  Check, 
-  Settings as SettingsIcon,
-  Search,
-  Grid,
-  Code,
-  FileCode,
-  AlertCircle,
-  Menu,
-  X,
-  Zap,
-  RefreshCw,
-  LayoutGrid,
-  Info
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { optimize } from 'svgo';
-import { cn } from './lib/utils';
+import React, {useCallback, useEffect, useState} from 'react';
+import {Check, Copy, Search, Upload, X, Zap} from 'lucide-react';
+import {AnimatePresence, motion} from 'motion/react';
+import {optimize} from 'svgo';
+import svgoConfig from '../../svgo.config.mjs';
+import {cn} from './lib/utils';
+
 
 // --- Types ---
 
@@ -58,7 +42,7 @@ const Header = () => (
     </div>
     <div className="flex flex-col items-end gap-6 pb-2">
       <div className="mt-6 md:mt-0 text-right">
-        <p className="text-sm font-black uppercase tracking-widest">Version 2.4.0</p>
+        <p className="text-sm font-black uppercase tracking-widest">Version 1.0.0</p>
         <p className="text-[10px] font-bold opacity-60 uppercase tracking-widest">Web Sprite Engine</p>
       </div>
       <a 
@@ -156,19 +140,8 @@ export default function App() {
   const optimizeIcon = useCallback(async (content: string, name: string): Promise<Omit<SvgIcon, 'id' | 'originalName'>> => {
     try {
       const result = await optimize(content, {
-        multipass: true,
-        plugins: [
-          'preset-default',
-          ...(options.removeDimensions ? ['removeDimensions'] as any[] : []),
-          ...(options.useCurrentColor ? [{
-            name: 'convertColors',
-            params: { currentColor: true }
-          }] as any[] : []),
-          {
-            name: 'removeAttrs',
-            params: { attrs: '(stroke|fill)' }
-          } as any
-        ]
+        ...svgoConfig,
+        path: `${name}.svg`,
       });
 
       // Extract viewBox
@@ -493,7 +466,7 @@ export default function App() {
           <span>System: Active</span>
         </div>
         <div className="flex gap-8">
-          <span className="opacity-50 hidden md:block">Zen-SVG v2.4.0 Engine</span>
+          <span className="opacity-50 hidden md:block">Zen-SVG v1.0.0 Engine</span>
           {icons.length > 0 && <button onClick={copyToClipboard} className="text-brand-orange hover:underline decoration-2 underline-offset-4">Copy Sprite {copied && "[Done]"}</button>}
         </div>
       </footer>
